@@ -2,6 +2,9 @@ const prompts = require('prompts');
 const generator = require('./util/random');
 const imageProcessor = require('./util/image');
 const p = require('./util/parameterization');
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+
 
 
 /*
@@ -43,7 +46,7 @@ async function composeRow (matrix, pub, rowValues, row) {
   Generate a card. It takes approximately 1 second to process a card, that is due to i/o. Some lazy caching might be a good idea at image processor level.
   Note that it takes 2 seconds more to save the card !
 */
-async function generateOneCard(card) {
+async function generateOneCard() {
     const matrix = await imageProcessor.loadImageIfAny(p.getMatrixPath());// load the matrix image (empty card)
     const numbers = generator.randomValues(p.NRows * p.NNumbers);
     const start =  Date.now();
@@ -54,12 +57,12 @@ async function generateOneCard(card) {
     }
 
     console.log("Card processed in " + (Date.now() - start) + " milli seconds.");
-    const path = p.getCardPath(card);
-    imageProcessor.write(matrix, path);// save the definitive card
-    console.log("Card processed and saved in " + Math.floor((Date.now() - start)/1000) + " seconds at path " + path + ".");
+    return matrix.getBufferAsync("image/jpeg");
 }
 
-
+/*
+ Prompt for the number of cards the user wants to generate
+ */
 async function inputs() {
     let questions = [{
         type: 'number',
@@ -76,10 +79,23 @@ async function inputs() {
 
 async function main() {
     const ncards = await inputs();
-    console.log("You asked to generate " + ncards + " cards.");
+    console.log("About to generate " + ncards + " cards.");
+    const start =  Date.now();
+    const doc = new PDFDocument;
+    const path = './out/output.pdf';
+    doc.pipe(fs.createWriteStream(path));
+    let counter = 0;
     for (let card = 0; card < ncards; card++) {
-        await generateOneCard(card + 1);
+        const image = await generateOneCard();
+        if(card % 3 === 0 && card > 0) {
+            doc.addPage();
+            counter= 0;
+        }
+        doc.image(image, 55, 55 + counter * 220, {width: 500});
+        counter ++;
     }
+    doc.end();
+    console.log(ncards + " cards processed and saved in " + Math.floor((Date.now() - start)/1000) + " seconds at path " + path + ".");
 }
 
 main();

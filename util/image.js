@@ -29,17 +29,5 @@ async function loadImageIfAny(path) {
     return undefined;
 }
 
-/*
-  Write the image at the given path. Errors are catched.
- */
-async function write(image, path) {
-    try {
-        image.write(path);
-    } catch (e) {
-        console.error("Unable to write card at path " + path)
-    }
-}
-
 exports.insertImage = insertImage;
 exports.loadImageIfAny = loadImageIfAny;
-exports.write = write;
