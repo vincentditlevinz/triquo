@@ -39,7 +39,7 @@ async function composeRow (matrix, pub, rowValues, row) {
             await imageProcessor.insertImage(p.getImgPath(rowValues[col]), matrix, col, row);
             const step1 = Date.now();
             if(logger.isDebugEnabled())
-                llogger.debug("Image inserted in " + (step0 - step1) + " milli seconds.");
+                logger.debug("Image inserted in " + (step0 - step1) + " milli seconds.");
         } else if (pub != null && !pubAlreadyInserted) {
             await imageProcessor.insertImage(pub, matrix, col, row);
             pubAlreadyInserted = true;
@@ -61,17 +61,17 @@ async function generateOneCard() {
         const pub = await imageProcessor.loadImageIfAny(p.getPubPath(row + 1), imageProcessor.getImageWidth(matrix), imageProcessor.getImageHeight(matrix));// load pub image for the given row
         const step1 = Date.now();
         if(logger.isDebugEnabled())
-            llogger.debug("Pub image loaded in " + (step1 - step0) + " milli seconds.");
+            logger.debug("Pub image loaded in " + (step1 - step0) + " milli seconds.");
         const step2 = Date.now();
         const rowValues = generateRowTemplate(numbers, row);
         const step3 = Date.now();
         if(logger.isDebugEnabled())
-            llogger.debug("Template generated in " + (step3 - step2) + " milli seconds.");
+            logger.debug("Template generated in " + (step3 - step2) + " milli seconds.");
         const step4 = Date.now();
         await composeRow(matrix, pub, rowValues, row);
         const step5 = Date.now();
         if(logger.isDebugEnabled())
-            llogger.debug("Row generated in " + (step5 - step4) + " milli seconds.");
+            logger.debug("Row generated in " + (step5 - step4) + " milli seconds.");
     }
 
     if(logger.isDebugEnabled())
