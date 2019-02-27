@@ -1,3 +1,4 @@
+const prompts = require('prompts');
 const generator = require('./util/random');
 const imageProcessor = require('./util/image');
 const p = require('./util/parameterization');
@@ -39,19 +40,46 @@ async function composeRow (matrix, pub, rowValues, row) {
 }
 
 /*
-  Generate a card
+  Generate a card. It takes approximately 1 second to process a card, that is due to i/o. Some lazy caching might be a good idea at image processor level.
+  Note that it takes 2 seconds more to save the card !
 */
-async function generateOneCard() {
+async function generateOneCard(card) {
     const matrix = await imageProcessor.loadImageIfAny(p.getMatrixPath());// load the matrix image (empty card)
     const numbers = generator.randomValues(p.NRows * p.NNumbers);
+    const start =  Date.now();
     for (let row = 0; row < p.NRows; row ++) {
         const pub = await imageProcessor.loadImageIfAny(p.getPubPath(row + 1));// load pub image for the given row
         const rowValues = generateRowTemplate(numbers, row);
         await composeRow(matrix, pub, rowValues, row);
-        console.log(rowValues.toString())
     }
-    imageProcessor.write(matrix, p.getCardPath(1));// save the definitive card
+
+    console.log("Card processed in " + (Date.now() - start) + " milli seconds.");
+    const path = p.getCardPath(card);
+    imageProcessor.write(matrix, path);// save the definitive card
+    console.log("Card processed and saved in " + Math.floor((Date.now() - start)/1000) + " seconds at path " + path + ".");
 }
 
 
-generateOneCard();
+async function inputs() {
+    let questions = [{
+        type: 'number',
+        name: 'value',
+        message: 'Nombre de cartes ?',
+        initial: 3,
+        style: 'default',
+        min: 2,
+        max: 10
+    }];
+    let response = await prompts(questions);
+    return response.value;
+}
+
+async function main() {
+    const ncards = await inputs();
+    console.log("You asked to generate " + ncards + " cards.");
+    for (let card = 0; card < ncards; card++) {
+        await generateOneCard(card + 1);
+    }
+}
+
+main();

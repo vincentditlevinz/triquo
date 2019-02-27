@@ -32,7 +32,7 @@ async function loadImageIfAny(path) {
 /*
   Write the image at the given path. Errors are catched.
  */
-function write(image, path) {
+async function write(image, path) {
     try {
         image.write(path);
     } catch (e) {
