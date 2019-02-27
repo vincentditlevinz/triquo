@@ -1,77 +1,57 @@
-const Jimp = require('jimp');
-const { Random, MersenneTwister19937 } = require("random-js");
-const random = new Random(MersenneTwister19937.autoSeed());
-const NNumbers = 5, NCols = 9, NRows = 3;
+const generator = require('./util/random');
+const imageProcessor = require('./util/image');
+const p = require('./util/parameterization');
 
-// generate a number that is guaranteed to be within [1, 90] without any particular bias.
-function generate1To90RandomValue() {
-    return random.integer(1, 90);
-}
 
-function getPath(number) {
-    return './img/' + number + '.jpg';
-}
-
-function getPubPath(number) {
-    return './pub/' + number + '.jpg';
-}
-
-function resolveColNumber(number) {
-    const colNumber = Math.floor(number / 10);
-    if(colNumber >= NCols) return NCols - 1;
-    return colNumber;
-}
-
-function randomValues() {
-    const nums = new Set();
-    while(nums.size !== NRows * NNumbers) {
-        nums.add(generate1To90RandomValue())
-    }
-    return Array.from(nums);
-}
-
+/*
+  Generate an array containing 0 or a random number whose position is determined accordingly with its value
+  (20 at second position, 50 at fifth and so on)
+*/
 function generateRowTemplate(numbers, row) {
-    const rowValues = Array(NCols).fill(0);
-    for (let col = 0; col < NNumbers; col++) {
-        const number = numbers[row * NNumbers + col];
+    const rowValues = Array(p.NCols).fill(0);
+    function resolveColNumber(number) {
+        const colNumber = Math.floor(number / 10);
+        if(colNumber >= p.NCols) return p.NCols - 1;
+        return colNumber;
+    }
+    for (let col = 0; col < p.NNumbers; col++) {
+        const number = numbers[row * p.NNumbers + col];
         rowValues[resolveColNumber(number)] = number;
     }
     return rowValues;
 }
 
-function insertImage(img, matrix, col, row) {
-    img.resize(80, 94, Jimp.RESIZE_BEZIER);// approximative resizing
-    matrix.blit(img, col * (img.getWidth() + 1.1) + 33, row * (img.getHeight() + 1.1) + 25)// approximative rule
-}
-
-async function generateOneCardImage() {
-    const matrix = await Jimp.read('./matrix/card.jpg');
-    const numbers = randomValues();
-    for (let row = 0; row < NRows; row ++) {
-        let pub = 'No Image';
-        try {
-            pub = await Jimp.read(getPubPath(row + 1));
-        } catch (e) {
-            console.warn("No pub image for row " + (row + 1))
+/*
+  Superimpose images onto the matrix for the given row. Images are resolved according to the random number
+  associated with the column. The first time a 0 is met, the pub image is superimposed.
+*/
+async function composeRow (matrix, pub, rowValues, row) {
+    let pubAlreadyInserted = false;
+    for (let col = 0; col < p.NCols; col++) {
+        if (rowValues[col] > 0) {
+            const img = await imageProcessor.loadImageIfAny(p.getImgPath(rowValues[col]));
+            imageProcessor.insertImage(img, matrix, col, row);
+        } else if (pub !== undefined && !pubAlreadyInserted) {
+            imageProcessor.insertImage(pub, matrix, col, row);
+            pubAlreadyInserted = true;
         }
-        const rowValues = generateRowTemplate(numbers, row);
-
-        let pubAlreadyInserted = false;
-        for (let col = 0; col < NCols; col ++) {
-            if(rowValues[col] > 0) {
-                const img = await Jimp.read(getPath(rowValues[col]));
-                insertImage(img, matrix, col, row);
-            } else if(pub !== 'No Image' && !pubAlreadyInserted) {
-                insertImage(pub, matrix, col, row);
-                pubAlreadyInserted = true;
-            }
-        }
-        matrix.write('./out/card1.jpg');
-        console.log(rowValues.toString())
     }
 }
 
+/*
+  Generate a card
+*/
+async function generateOneCard() {
+    const matrix = await imageProcessor.loadImageIfAny(p.getMatrixPath());// load the matrix image (empty card)
+    const numbers = generator.randomValues(p.NRows * p.NNumbers);
+    for (let row = 0; row < p.NRows; row ++) {
+        const pub = await imageProcessor.loadImageIfAny(p.getPubPath(row + 1));// load pub image for the given row
+        const rowValues = generateRowTemplate(numbers, row);
+        await composeRow(matrix, pub, rowValues, row);
+        console.log(rowValues.toString())
+    }
+    imageProcessor.write(matrix, p.getCardPath(1));// save the definitive card
+}
 
-generateOneCardImage();
 
-//main();
+generateOneCard();
