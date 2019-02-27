@@ -4,6 +4,13 @@
 
 const Jimp = require('jimp');
 const p = require('../util/parameterization');
+const log4js = require('log4js');
+const logger = log4js.getLogger('images');
+logger.level = 'warn';
+const cached = require('cached');
+const cache = cached('images', { backend: {
+    type: 'memory'
+}});
 
 /*
   Insert the image in the matrix at the given row and column.
@@ -21,12 +28,14 @@ function insertImage(img, matrix, col, row) {
   Load and image or return undefined in case of an exception
  */
 async function loadImageIfAny(path) {
-    try {
-        return await Jimp.read(path);
-    } catch (e) {
-        console.warn("No pub image with path " + path)
-    }
-    return undefined;
+    return await cache.getOrElse(path, async () => {
+        try {
+            return await Jimp.read(path);
+        } catch (e) {
+            logger.warn("No pub image with path " + path)
+        }
+        return null;
+    });
 }
 
 exports.insertImage = insertImage;
