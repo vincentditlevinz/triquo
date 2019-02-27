@@ -6,31 +6,54 @@ const Jimp = require('jimp');
 const p = require('../util/parameterization');
 const log4js = require('log4js');
 const logger = log4js.getLogger('images');
-logger.level = 'warn';
 const cached = require('cached');
 const cache = cached('images', { backend: {
     type: 'memory'
 }});
 
+
+logger.level = 'info';
+
 /*
   Insert the image in the matrix at the given row and column.
   The image is automatically resized according to the matrix size, the border and the padding thickness
  */
-function insertImage(img, matrix, col, row) {
-    iWidth = (matrix.getWidth() - 2 * p.Border) / p.NCols - 2 * p.Padding;
-    iHeight = (matrix.getHeight() - 2 * p.Border) / p.NRows - 2 * p.Padding;
+async function insertImage(imagePath, matrix, col, row) {
+    const iWidth = getImageWidth(matrix);
+    const iHeight = getImageHeight(matrix);
 
-    img.resize(iWidth, iHeight, Jimp.RESIZE_HERMITE);
-    matrix.blit(img, col * (iWidth + 2 * p.Padding) + p.Border  + p.Padding, row * (iHeight + 2 * p.Padding) + p.Border + p.Padding)
+    const step0 = Date.now();
+    const img = await loadImageIfAny(imagePath, iWidth, iHeight);
+    const step1 = Date.now();
+    if(logger.isDebugEnabled())
+        logger.debug("Image loaded and resized in " + (step1 - step0) + " milli seconds.");
+
+    const step2 = Date.now();
+    matrix.blit(img, col * (iWidth + 2 * p.Padding) + p.Border  + p.Padding, row * (iHeight + 2 * p.Padding) + p.Border + p.Padding);
+    const step3 = Date.now();
+    if(logger.isDebugEnabled())
+        logger.debug("Image superimposed in " + (step3 - step2) + " milli seconds.");
+}
+
+function getImageWidth(matrix) {
+    return (matrix.getWidth() - 2 * p.Border) / p.NCols - 2 * p.Padding;
+}
+
+function getImageHeight(matrix) {
+    return (matrix.getHeight() - 2 * p.Border) / p.NRows - 2 * p.Padding;
 }
 
 /*
   Load and image or return undefined in case of an exception
  */
-async function loadImageIfAny(path) {
+async function loadImageIfAny(path, width, height) {
     return await cache.getOrElse(path, async () => {
         try {
-            return await Jimp.read(path);
+            const img = await Jimp.read(path);
+            if(width != null && height != null) {
+                img.resize(width, height, Jimp.RESIZE_HERMITE);
+            }
+            return img;
         } catch (e) {
             logger.warn("No pub image with path " + path)
         }
@@ -40,3 +63,5 @@ async function loadImageIfAny(path) {
 
 exports.insertImage = insertImage;
 exports.loadImageIfAny = loadImageIfAny;
+exports.getImageWidth = getImageWidth;
+exports.getImageHeight = getImageHeight;

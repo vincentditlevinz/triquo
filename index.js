@@ -36,13 +36,10 @@ async function composeRow (matrix, pub, rowValues, row) {
     for (let col = 0; col < p.NCols; col++) {
         if (rowValues[col] > 0) {
             const step0 = Date.now();
-            const img = await imageProcessor.loadImageIfAny(p.getImgPath(rowValues[col]));
+            await imageProcessor.insertImage(p.getImgPath(rowValues[col]), matrix, col, row);
             const step1 = Date.now();
-            logger.debug("Image loaded in " + (step1 - step0) + " milli seconds.");
-            const step2 = Date.now();
-            await imageProcessor.insertImage(img, matrix, col, row);
-            const step3 = Date.now();
-            logger.debug("Image inserted in " + (step3 - step2) + " milli seconds.");
+            if(logger.isDebugEnabled())
+                llogger.debug("Image inserted in " + (step0 - step1) + " milli seconds.");
         } else if (pub != null && !pubAlreadyInserted) {
             await imageProcessor.insertImage(pub, matrix, col, row);
             pubAlreadyInserted = true;
@@ -61,21 +58,25 @@ async function generateOneCard() {
     const start =  Date.now();
     for (let row = 0; row < p.NRows; row ++) {
         const step0 = Date.now();
-        const pub = await imageProcessor.loadImageIfAny(p.getPubPath(row + 1));// load pub image for the given row
+        const pub = await imageProcessor.loadImageIfAny(p.getPubPath(row + 1), imageProcessor.getImageWidth(matrix), imageProcessor.getImageHeight(matrix));// load pub image for the given row
         const step1 = Date.now();
-        logger.debug("Pub image loaded in " + (step1 - step0) + " milli seconds.");
+        if(logger.isDebugEnabled())
+            llogger.debug("Pub image loaded in " + (step1 - step0) + " milli seconds.");
         const step2 = Date.now();
         const rowValues = generateRowTemplate(numbers, row);
         const step3 = Date.now();
-        logger.debug("Template generated in " + (step3 - step2) + " milli seconds.");
+        if(logger.isDebugEnabled())
+            llogger.debug("Template generated in " + (step3 - step2) + " milli seconds.");
         const step4 = Date.now();
         await composeRow(matrix, pub, rowValues, row);
         const step5 = Date.now();
-        logger.debug("Row generated in " + (step5 - step4) + " milli seconds.");
+        if(logger.isDebugEnabled())
+            llogger.debug("Row generated in " + (step5 - step4) + " milli seconds.");
     }
 
-    logger.info("Card processed in " + (Date.now() - start) + " milli seconds.");
-    return matrix.getBufferAsync("image/jpeg");
+    if(logger.isDebugEnabled())
+        logger.debug("Card processed in " + (Date.now() - start) + " milli seconds.");
+    return matrix.getBufferAsync("image/jpeg");// getBuffer is a rather log process
 }
 
 /*
@@ -85,11 +86,11 @@ async function inputs() {
     let questions = [{
         type: 'number',
         name: 'value',
-        message: 'Nombre de cartes ?',
+        message: 'Nombre de cartes (1000 maxi) ?',
         initial: 3,
         style: 'default',
-        min: 2,
-        max: 10
+        min: 1,
+        max: 1000
     }];
     let response = await prompts(questions);
     return response.value;
@@ -105,7 +106,10 @@ async function main() {
         doc.pipe(fs.createWriteStream(path));
         let counter = 0;
         for (let card = 0; card < ncards; card++) {
-            const image = await generateOneCard();
+            const step0 = Date.now();
+            const image = await generateOneCard();// we must block here...
+            const step1 = Date.now();
+            logger.info("Card inserted in pdf in " + (step1 - step0) + " milli seconds.");
             if (card % 3 === 0 && card > 0) {
                 doc.addPage();
                 counter = 0;
