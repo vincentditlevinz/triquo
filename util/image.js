@@ -25,14 +25,16 @@ async function insertImage(imagePath, matrix, col, row) {
     const step0 = Date.now();
     const img = await loadImageIfAny(imagePath, iWidth, iHeight);
     const step1 = Date.now();
-    if(logger.isDebugEnabled())
+    if (logger.isDebugEnabled())
         logger.debug("Image loaded and resized in " + (step1 - step0) + " milli seconds.");
 
-    const step2 = Date.now();
-    matrix.blit(img, col * (iWidth + 2 * p.Padding) + p.Border  + p.Padding, row * (iHeight + 2 * p.Padding) + p.Border + p.Padding);
-    const step3 = Date.now();
-    if(logger.isDebugEnabled())
-        logger.debug("Image superimposed in " + (step3 - step2) + " milli seconds.");
+    if (img != null) {
+        const step2 = Date.now();
+        matrix.blit(img, col * (iWidth + 2 * p.Padding) + p.Border + p.Padding, row * (iHeight + 2 * p.Padding) + p.Border + p.Padding);
+        const step3 = Date.now();
+        if (logger.isDebugEnabled())
+            logger.debug("Image superimposed in " + (step3 - step2) + " milli seconds.");
+    }
 }
 
 function getImageWidth(matrix) {

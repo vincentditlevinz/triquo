@@ -31,7 +31,7 @@ function generateRowTemplate(numbers, row) {
   Superimpose images onto the matrix for the given row. Images are resolved according to the random number
   associated with the column. The first time a 0 is met, the pub image is superimposed.
 */
-async function composeRow (matrix, pub, rowValues, row) {
+async function composeRow (matrix, pubPath, rowValues, row) {
     let pubAlreadyInserted = false;
     for (let col = 0; col < p.NCols; col++) {
         if (rowValues[col] > 0) {
@@ -40,8 +40,8 @@ async function composeRow (matrix, pub, rowValues, row) {
             const step1 = Date.now();
             if(logger.isDebugEnabled())
                 logger.debug("Image inserted in " + (step0 - step1) + " milli seconds.");
-        } else if (pub != null && !pubAlreadyInserted) {
-            await imageProcessor.insertImage(pub, matrix, col, row);
+        } else if (!pubAlreadyInserted) {
+            await imageProcessor.insertImage(pubPath, matrix, col, row);
             pubAlreadyInserted = true;
         }
     }
@@ -58,7 +58,6 @@ async function generateOneCard() {
     const start =  Date.now();
     for (let row = 0; row < p.NRows; row ++) {
         const step0 = Date.now();
-        const pub = await imageProcessor.loadImageIfAny(p.getPubPath(row + 1), imageProcessor.getImageWidth(matrix), imageProcessor.getImageHeight(matrix));// load pub image for the given row
         const step1 = Date.now();
         if(logger.isDebugEnabled())
             logger.debug("Pub image loaded in " + (step1 - step0) + " milli seconds.");
@@ -68,7 +67,7 @@ async function generateOneCard() {
         if(logger.isDebugEnabled())
             logger.debug("Template generated in " + (step3 - step2) + " milli seconds.");
         const step4 = Date.now();
-        await composeRow(matrix, pub, rowValues, row);
+        await composeRow(matrix, p.getPubPath(row + 1), rowValues, row);
         const step5 = Date.now();
         if(logger.isDebugEnabled())
             logger.debug("Row generated in " + (step5 - step4) + " milli seconds.");
