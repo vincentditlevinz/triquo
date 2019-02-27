@@ -3,14 +3,18 @@
  */
 
 const Jimp = require('jimp');
+const p = require('../util/parameterization');
 
 /*
   Insert the image in the matrix at the given row and column.
   The image is automatically resized according to the matrix size, the border and the padding thickness
  */
 function insertImage(img, matrix, col, row) {
-    img.resize(80, 94, Jimp.RESIZE_BEZIER);// approximative resizing
-    matrix.blit(img, col * (img.getWidth() + 1.1) + 33, row * (img.getHeight() + 1.1) + 25)// approximative rule
+    iWidth = (matrix.getWidth() - 2 * p.Border) / p.NCols - 2 * p.Padding;
+    iHeight = (matrix.getHeight() - 2 * p.Border) / p.NRows - 2 * p.Padding;
+
+    img.resize(iWidth, iHeight, Jimp.RESIZE_HERMITE);
+    matrix.blit(img, col * (iWidth + 2 * p.Padding) + p.Border  + p.Padding, row * (iHeight + 2 * p.Padding) + p.Border + p.Padding)
 }
 
 /*
