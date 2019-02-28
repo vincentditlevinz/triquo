@@ -67,18 +67,18 @@ async function generateOneCard(resolution) {
  */
 async function inputs() {
     let questions = [{
-        type: 'number',
-        name: 'ncards',
-        message: 'Nombre de cartes (1000 maxi) ?',
-        initial: 3,
-        style: 'default',
-        min: 1,
-        max: 1000
+            type: 'number',
+            name: 'ncards',
+            message: 'Nombre de cartes (1000 maxi) ?',
+            initial: 3,
+            style: 'default',
+            min: 1,
+            max: 10000
         },
         {
             type: 'number',
             name: 'resolution',
-            message: 'Résolution des images en %) ?',
+            message: 'Résolution des images en % ?',
             initial: 25,
             style: 'default',
             min: 1,
@@ -87,6 +87,9 @@ async function inputs() {
     return await prompts(questions);
 }
 
+/*
+    Performances with default resolution (25%) => 100 cards in 75 s for a PDF file of 50 MO. Linear extrapolation means 10000 cards in 2 hours and a file of 5 GO.
+ */
 async function main() {
     const params = await inputs();
     logger.info("About to generate " + params.ncards + " cards.");
@@ -94,13 +97,20 @@ async function main() {
     const doc = new PDFDocument;
     const path = './out/output.pdf';
     try {
+        let images = Array(params.ncards);
+        for (let card = 0; card < params.ncards; card++) {
+            images[card] = generateOneCard(params.resolution);
+        }
+
+        const step0 = Date.now();
+        images = await Promise.all(images);
+        const step1 = Date.now();
+        logger.info(params.ncards + " cards generated in " + (step1 - step0) + " milli seconds.");
+
         doc.pipe(fs.createWriteStream(path));
         let counter = 0;
         for (let card = 0; card < params.ncards; card++) {
-            const step0 = Date.now();
-            const image = await generateOneCard(params.resolution);// we must block here...
-            const step1 = Date.now();
-            logger.info("Card inserted in pdf in " + (step1 - step0) + " milli seconds.");
+            const image = images[card];// we must block here...
             if (card % 3 === 0 && card > 0) {
                 doc.addPage();
                 counter = 0;
