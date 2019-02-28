@@ -3,7 +3,7 @@
  */
 
 const Jimp = require('jimp');
-const p = require('../util/parameterization');
+const p = require('./parameterization');
 const log4js = require('log4js');
 const logger = log4js.getLogger('images');
 const cached = require('cached');
