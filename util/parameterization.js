@@ -3,7 +3,7 @@
  */
 
 const NNumbers = 5, NCols = 9, NRows = 3;
-const Border = 125, Padding = 5;
+const BorderXpc = 0.025, BorderYpc = 0.055, Padding = 2;
 
 function getImgPath(number) {
     return './img/' + number + '.jpg';
@@ -24,7 +24,8 @@ function getCardPath(number) {
 exports.NNumbers = NNumbers;
 exports.NCols = NCols;
 exports.NRows = NRows;
-exports.Border = Border;
+exports.BorderXpc = BorderXpc;
+exports.BorderYpc = BorderYpc;
 exports.Padding = Padding;
 exports.getImgPath = getImgPath;
 exports.getPubPath = getPubPath;

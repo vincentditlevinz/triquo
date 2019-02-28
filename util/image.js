@@ -30,7 +30,7 @@ async function insertImage(imagePath, matrix, col, row) {
 
     if (img != null) {
         const step2 = Date.now();
-        matrix.blit(img, col * (iWidth + 2 * p.Padding) + p.Border + p.Padding, row * (iHeight + 2 * p.Padding) + p.Border + p.Padding);
+        matrix.blit(img, col * (iWidth + 2 * p.Padding) + p.BorderXpc * matrix.getWidth() + p.Padding, row * (iHeight + 2 * p.Padding) + p.BorderYpc * matrix.getHeight() + p.Padding);
         const step3 = Date.now();
         if (logger.isDebugEnabled())
             logger.debug("Image superimposed in " + (step3 - step2) + " milli seconds.");
@@ -38,11 +38,11 @@ async function insertImage(imagePath, matrix, col, row) {
 }
 
 function getImageWidth(matrix) {
-    return (matrix.getWidth() - 2 * p.Border) / p.NCols - 2 * p.Padding;
+    return (matrix.getWidth() - 2 * p.BorderXpc * matrix.getWidth()) / p.NCols - 2 * p.Padding;
 }
 
 function getImageHeight(matrix) {
-    return (matrix.getHeight() - 2 * p.Border) / p.NRows - 2 * p.Padding;
+    return (matrix.getHeight() - 2 * p.BorderYpc * matrix.getHeight()) / p.NRows - 2 * p.Padding;
 }
 
 /*
@@ -53,6 +53,8 @@ async function loadImageIfAny(path, width, height) {
         try {
             const img = await Jimp.read(path);
             if(width != null && height != null) {
+                if(logger.isDebugEnabled())
+                    logger.debug(path + "   width=" + width + "     height=" + height);
                 img.resize(width, height, Jimp.RESIZE_HERMITE);
             }
             return img;

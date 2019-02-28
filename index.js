@@ -1,3 +1,4 @@
+const Jimp = require('jimp');
 const prompts = require('prompts');
 const generator = require('./util/random');
 const imageProcessor = require('./util/image');
@@ -33,9 +34,10 @@ async function composeRow (matrix, pubPath, rowValues, row) {
   Generate a card. It takes approximately 1 second to process a card, that is due to i/o. Some lazy caching might be a good idea at image processor level.
   Note that it takes 2 seconds more to save the card !
 */
-async function generateOneCard() {
+async function generateOneCard(resolution) {
     let matrix = await imageProcessor.loadImageIfAny(p.getMatrixPath());// load the matrix image (empty card)
-    matrix = matrix.clone();// image might be cached
+    matrix = matrix.clone();
+    matrix.resize(matrix.getWidth() * resolution/100, matrix.getHeight() * resolution/100);// optimize performance by downscaling the resolution
     const template = generator.generateMatrixTemplate();
     const start =  Date.now();
     for (let row = 0; row < p.NRows; row ++) {
@@ -57,7 +59,7 @@ async function generateOneCard() {
 
     if(logger.isDebugEnabled())
         logger.debug("Card processed in " + (Date.now() - start) + " milli seconds.");
-    return matrix.getBufferAsync("image/jpeg");// getBuffer is a rather log process
+    return matrix.getBufferAsync(Jimp.MIME_JPEG);// getBuffer is a rather log process
 }
 
 /*
@@ -66,29 +68,37 @@ async function generateOneCard() {
 async function inputs() {
     let questions = [{
         type: 'number',
-        name: 'value',
+        name: 'ncards',
         message: 'Nombre de cartes (1000 maxi) ?',
         initial: 3,
         style: 'default',
         min: 1,
         max: 1000
-    }];
-    let response = await prompts(questions);
-    return response.value;
+        },
+        {
+            type: 'number',
+            name: 'resolution',
+            message: 'Résolution des images en %) ?',
+            initial: 25,
+            style: 'default',
+            min: 1,
+            max: 100
+        }];
+    return await prompts(questions);
 }
 
 async function main() {
-    const ncards = await inputs();
-    logger.info("About to generate " + ncards + " cards.");
+    const params = await inputs();
+    logger.info("About to generate " + params.ncards + " cards.");
     const start =  Date.now();
     const doc = new PDFDocument;
     const path = './out/output.pdf';
     try {
         doc.pipe(fs.createWriteStream(path));
         let counter = 0;
-        for (let card = 0; card < ncards; card++) {
+        for (let card = 0; card < params.ncards; card++) {
             const step0 = Date.now();
-            const image = await generateOneCard();// we must block here...
+            const image = await generateOneCard(params.resolution);// we must block here...
             const step1 = Date.now();
             logger.info("Card inserted in pdf in " + (step1 - step0) + " milli seconds.");
             if (card % 3 === 0 && card > 0) {
@@ -101,7 +111,7 @@ async function main() {
     } finally {
         doc.end();
     }
-    logger.info(ncards + " cards processed and saved in " + Math.floor((Date.now() - start)/1000) + " seconds at path " + path + ".");
+    logger.info(params.ncards + " cards processed and saved in " + Math.floor((Date.now() - start)/1000) + " seconds at path " + path + ".");
 }
 
 main();
