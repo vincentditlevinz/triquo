@@ -1,4 +1,4 @@
-# triquo loto
+# Triq'o loto
 
 
 * npm i
