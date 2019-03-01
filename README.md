@@ -1,5 +1,5 @@
 # triquo loto
 
 
-npm i
-npm run pkg
+* npm i
+* npm run pkg
