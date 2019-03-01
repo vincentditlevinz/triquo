@@ -136,11 +136,12 @@ async function processBatch(doc, resolution, batchSize) {
     Performances with default resolution (25%) => 1000 cards in 220 s for a PDF file of 484 MO. Linear extrapolation means 10000 cards in 37 min and a file of 5 GO.
  */
 async function main() {
-    logger.info("=================================================================================================================================" );
-    logger.info("Cette application permet de générer des cartes de loto ludiques. Un fichier output.pdf est généré dans le répertoire d'exécution." );
-    logger.info("Il est possible d'insérer jusqu'à trois images publicitaires pour personnaliser les cartons de loto. Il sufft de créer un dossier" );
-    logger.info("'pub' et d'y ajouter les fichiers 1.jpg, 2.jpg, 3.jpg. L'absence d'un de ces fichiers implique 'pas de pub' à la ligne concernée." );
-    logger.info("=================================================================================================================================" );
+    logger.info("====================================================================================================================================" );
+    logger.info("Cette application permet de générer des cartes de loto ludiques. Un fichier output.pdf est généré dans le répertoire d'exécution.  " );
+    logger.info("Il est possible d'insérer jusqu'à trois images publicitaires pour personnaliser les cartons de loto. Il sufft de créer un dossier  " );
+    logger.info("'pub' et d'y ajouter les fichiers 1.jpg, 2.jpg, 3.jpg. L'absence d'un de ces fichiers implique 'pas de pub' à la ligne concernée.  " );
+    logger.info("Performances observées (res=25, 1000 cartes, batch=600): 220s pour un pdf de 484 MO, soit 27 min pour 10000 cartes et 5GO de sortie" );
+    logger.info("====================================================================================================================================" );
     const params = await inputs();
     logger.info("About to generate " + params.ncards + " cards.");
     const start =  Date.now();
