@@ -3,7 +3,8 @@
  */
 
 const NNumbers = 5, NCols = 9, NRows = 3;
-const BorderXpc = 0.025, BorderYpc = 0.055, Padding = 2;
+const matrixWidth = 4817, matrixHeight=2021;// Should change if matrix image is modified in the future (enable debug logging to know the ne dimensions).
+const BorderXpc = 125.0/matrixWidth, BorderYpc = 125.0/matrixHeight, Padding = 5;
 
 function getImgPath(number) {
     return './img/' + number + '.jpg';

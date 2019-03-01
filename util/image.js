@@ -18,9 +18,10 @@ logger.level = 'info';
   Insert the image in the matrix at the given row and column.
   The image is automatically resized according to the matrix size, the border and the padding thickness
  */
-async function insertImage(imagePath, matrix, col, row) {
-    const iWidth = getImageWidth(matrix);
-    const iHeight = getImageHeight(matrix);
+async function insertImage(imagePath, matrix, col, row, resolution) {
+    const effectivePadding = p.Padding * (resolution / 100.);
+    const iWidth = (matrix.getWidth() - 2 * p.BorderXpc * matrix.getWidth()) / p.NCols - 2 * effectivePadding;
+    const iHeight = (matrix.getHeight() - 2 * p.BorderYpc * matrix.getHeight()) / p.NRows - 2 * effectivePadding;
 
     const step0 = Date.now();
     const img = await loadImageIfAny(imagePath, iWidth, iHeight);
@@ -30,26 +31,31 @@ async function insertImage(imagePath, matrix, col, row) {
 
     if (img != null) {
         const step2 = Date.now();
-        matrix.blit(img, col * (iWidth + 2 * p.Padding) + p.BorderXpc * matrix.getWidth() + p.Padding, row * (iHeight + 2 * p.Padding) + p.BorderYpc * matrix.getHeight() + p.Padding);
+        matrix.blit(img, col * (iWidth + 2 * effectivePadding) + p.BorderXpc * matrix.getWidth() + effectivePadding, row * (iHeight + 2 * effectivePadding) + p.BorderYpc * matrix.getHeight() + effectivePadding);
         const step3 = Date.now();
         if (logger.isDebugEnabled())
             logger.debug("Image superimposed in " + (step3 - step2) + " milli seconds.");
     }
 }
 
-function getImageWidth(matrix) {
-    return (matrix.getWidth() - 2 * p.BorderXpc * matrix.getWidth()) / p.NCols - 2 * p.Padding;
-}
-
-function getImageHeight(matrix) {
-    return (matrix.getHeight() - 2 * p.BorderYpc * matrix.getHeight()) / p.NRows - 2 * p.Padding;
+async function loadMatrix(resolution) {
+    const img =  await cache.getOrElse(p.getMatrixPath(), async () => {
+        const matrix = await Jimp.read(p.getMatrixPath());
+        const width = matrix.getWidth();
+        const height = matrix.getHeight();
+        if(logger.isDebugEnabled())
+            logger.debug(p.getMatrixPath() + "   width=" + width + "     height=" + height);
+        matrix.resize(width * resolution/100, height * resolution/100);// optimize performance by downscaling the resolution
+        return matrix;
+    });
+    return img.clone();
 }
 
 /*
   Load and image or return undefined in case of an exception
  */
-async function loadImageIfAny(path, width, height) {
-    return await cache.getOrElse(path, async () => {
+function loadImageIfAny(path, width, height) {
+    return cache.getOrElse(path, async () => {
         try {
             const img = await Jimp.read(path);
             if(width != null && height != null) {
@@ -66,6 +72,4 @@ async function loadImageIfAny(path, width, height) {
 }
 
 exports.insertImage = insertImage;
-exports.loadImageIfAny = loadImageIfAny;
-exports.getImageWidth = getImageWidth;
-exports.getImageHeight = getImageHeight;
+exports.loadMatrix = loadMatrix;
