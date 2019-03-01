@@ -7,12 +7,18 @@ const p = require('./parameterization');
 const log4js = require('log4js');
 const logger = log4js.getLogger('images');
 const cached = require('cached');
+const path = require("path");
 const cache = cached('images', { backend: {
     type: 'memory'
 }});
 
 
 logger.level = 'info';
+
+function getMatrixPath() {
+    return path.join(__dirname, "..", 'matrix', 'matrix.jpg');
+}
+
 
 /*
   Insert the image in the matrix at the given row and column.
@@ -39,12 +45,12 @@ async function insertImage(imagePath, matrix, col, row, resolution) {
 }
 
 async function loadMatrix(resolution) {
-    const img =  await cache.getOrElse(p.getMatrixPath(), async () => {
-        const matrix = await Jimp.read(p.getMatrixPath());
+    const img =  await cache.getOrElse(getMatrixPath(), async () => {
+        const matrix = await Jimp.read(getMatrixPath());
         const width = matrix.getWidth();
         const height = matrix.getHeight();
         if(logger.isDebugEnabled())
-            logger.debug(p.getMatrixPath() + "   width=" + width + "     height=" + height);
+            logger.debug(getMatrixPath() + "   width=" + width + "     height=" + height);
         matrix.resize(width * resolution/100, height * resolution/100);// optimize performance by downscaling the resolution
         return matrix;
     });

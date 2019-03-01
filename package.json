@@ -4,7 +4,8 @@
   "description": "Générateur de cartes de loto",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "pkg": "pkg package.json --target node10-linux-x64,node10-win-x64"
   },
   "author": "vincentditlevinz",
   "license": "MIT",
@@ -16,5 +17,11 @@
     "pdfkit": "^0.9.0",
     "prompts": "^2.0.3",
     "random-js": "^2.0.0-rc2"
+  },
+  "bin": "index.js",
+  "pkg": {
+    "assets": [
+      "img/*.jpg", "matrix/matrix.jpg", "util/*.js", "node_modules/**/*.*"
+    ]
   }
 }
