@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "pkg": "pkg package.json --target node10-linux-x64,node10-win-x64"
+    "pkg": "pkg package.json --target node10-linux-x64,node10-win-x64 --out-path dist"
   },
   "author": "vincentditlevinz",
   "license": "MIT",
