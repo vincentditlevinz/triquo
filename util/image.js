@@ -7,7 +7,7 @@ const p = require('./parameterization');
 const log4js = require('log4js');
 const logger = log4js.getLogger('images');
 const cached = require('cached');
-const path = require("path");
+const paths = require('./paths');
 const cache = cached('images', { backend: {
     type: 'memory'
 }});
@@ -15,9 +15,6 @@ const cache = cached('images', { backend: {
 
 logger.level = 'info';
 
-function getMatrixPath() {
-    return path.join(__dirname, "..", 'matrix', 'matrix.jpg');
-}
 
 
 /*
@@ -33,7 +30,7 @@ async function insertImage(imagePath, matrix, col, row, resolution) {
     const img = await loadImageIfAny(imagePath, iWidth, iHeight);
     const step1 = Date.now();
     if (logger.isDebugEnabled())
-        logger.debug("Image loaded and resized in " + (step1 - step0) + " milli seconds.");
+        logger.debug("Image loaded and resized in " + (step1 - step0) + " milli seconds (path=" + imagePath + ").");
 
     if (img != null) {
         const step2 = Date.now();
@@ -45,12 +42,13 @@ async function insertImage(imagePath, matrix, col, row, resolution) {
 }
 
 async function loadMatrix(resolution) {
-    const img =  await cache.getOrElse(getMatrixPath(), async () => {
-        const matrix = await Jimp.read(getMatrixPath());
+    const matrixPath = paths.getMatrixPath();
+    const img =  await cache.getOrElse(matrixPath, async () => {
+        const matrix = await Jimp.read(matrixPath);
         const width = matrix.getWidth();
         const height = matrix.getHeight();
         if(logger.isDebugEnabled())
-            logger.debug(getMatrixPath() + "   width=" + width + "     height=" + height);
+            logger.debug(matrixPath + "   width=" + width + "     height=" + height);
         matrix.resize(width * resolution/100, height * resolution/100);// optimize performance by downscaling the resolution
         return matrix;
     });
@@ -71,7 +69,7 @@ function loadImageIfAny(path, width, height) {
             }
             return img;
         } catch (e) {
-            logger.warn("No pub image with path " + path)
+            logger.warn("No image with path: " + path)
         }
         return null;
     });

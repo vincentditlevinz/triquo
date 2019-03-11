@@ -5,39 +5,28 @@ const processor = require('./util/image');
 const p = require('./util/parameterization');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
-const path = require("path");
+const paths = require('./util/paths');
 const log4js = require('log4js');
 const logger = log4js.getLogger('root');
 logger.level = 'info';
 
-function getImgPath(number) {
-    return path.join(__dirname, 'img' , number + '.jpg');
-}
 
-function getPubPath(number) {
-    return path.join(process.cwd(), 'pub', number + '.jpg');
-}
-
-
-function getOutputPath() {
-    return path.join(process.cwd(), 'output.pdf');
-}
 
 /*
   Superimpose images onto the matrix for the given row. Images are resolved according to the random number
   associated with the column. The first time a 0 is met, the pub image is superimposed.
 */
-async function composeRow (matrix, pubPath, rowValues, row, resolution) {
+async function composeRow (matrix, rowValues, row, resolution) {
     let pubAlreadyInserted = false;
     for (let col = 0; col < p.NCols; col++) {
         if (rowValues[col] > 0) {
             const step0 = Date.now();
-            await processor.insertImage(getImgPath(rowValues[col]), matrix, col, row, resolution);
+            await processor.insertImage(paths.getImgPath(rowValues[col]), matrix, col, row, resolution);
             const step1 = Date.now();
             if(logger.isDebugEnabled())
                 logger.debug("Image inserted in " + (step0 - step1) + " milli seconds.");
-        } else if (!pubAlreadyInserted) {
-            await processor.insertImage(pubPath, matrix, col, row, resolution);
+        } else if (!pubAlreadyInserted && col >= row) {
+            await processor.insertImage(paths.getPubPath(row + 1), matrix, col, row, resolution);
             pubAlreadyInserted = true;
         }
     }
@@ -61,7 +50,7 @@ async function generateOneCard(resolution) {
         if(logger.isDebugEnabled())
             logger.debug("Template generated in " + (step3 - step2) + " milli seconds.");
         const step4 = Date.now();
-        await composeRow(matrix, getPubPath(row + 1), rowValues, row, resolution);
+        await composeRow(matrix, rowValues, row, resolution);
         const step5 = Date.now();
         if(logger.isDebugEnabled())
             logger.debug("Row generated in " + (step5 - step4) + " milli seconds.");
@@ -77,14 +66,14 @@ async function generateOneCard(resolution) {
  */
 async function inputs() {
     let questions = [{
-            type: 'number',
-            name: 'ncards',
-            message: 'Nombre de cartes ?',
-            initial: 3,
-            style: 'default',
-            min: 1,
-            max: 50000
-        },
+        type: 'number',
+        name: 'ncards',
+        message: 'Nombre de cartes ?',
+        initial: 3,
+        style: 'default',
+        min: 1,
+        max: 50000
+    },
         {
             type: 'number',
             name: 'resolution',
@@ -136,17 +125,21 @@ async function processBatch(doc, resolution, batchSize) {
     Performances with default resolution (25%) => 1000 cards in 220 s for a PDF file of 484 MO. Linear extrapolation means 10000 cards in 37 min and a file of 5 GO.
  */
 async function main() {
-    logger.info("====================================================================================================================================" );
-    logger.info("Cette application permet de générer des cartes de loto ludiques. Un fichier output.pdf est généré dans le répertoire d'exécution.  " );
-    logger.info("Il est possible d'insérer jusqu'à trois images publicitaires pour personnaliser les cartons de loto. Il sufft de créer un dossier  " );
-    logger.info("'pub' et d'y ajouter les fichiers 1.jpg, 2.jpg, 3.jpg. L'absence d'un de ces fichiers implique 'pas de pub' à la ligne concernée.  " );
-    logger.info("Performances observées (res=25, 1000 cartes, batch=600): 220s pour un pdf de 484 MO, soit 27 min pour 10000 cartes et 5GO de sortie" );
-    logger.info("====================================================================================================================================" );
+    logger.info("=====================================================================================================================================" );
+    logger.info("Cette application permet de générer des cartes de loto ludiques. Un fichier output.pdf est généré dans le répertoire d'exécution.    " );
+    logger.info("Il est possible d'insérer jusqu'à trois images publicitaires pour personnaliser les cartons de loto. Il sufft de créer un dossier    " );
+    logger.info("'pub' et d'y ajouter les fichiers 1.jpg, 2.jpg, 3.jpg. L'absence d'un de ces fichiers implique 'pas de pub' à la ligne concernée.    " );
+    logger.info("Les images publicitaires sont insérées dans la première case vide telle que le N° de colonne est sup ou égal au N° de ligne pour     " );
+    logger.info("éviter l'alignement vertical des publicités.                                                                                         " );
+    logger.info("Il est possible de surcharger les images par défaut fournies. Il suffit de créer un répertoire 'img' dans les répertoire d'exécution " );
+    logger.info("et d'y ajouter l'image voulue, par ex 4.jpg surcharge l'image pour le nombre 4.                                                       " );
+    logger.info("Performances observées (res=25, 1000 cartes, batch=600): 220s pour un pdf de 484 MO, soit 27 min pour 10000 cartes et 5GO de sortie. " );
+    logger.info("=====================================================================================================================================" );
     const params = await inputs();
     logger.info("About to generate " + params.ncards + " cards.");
     const start =  Date.now();
     const doc = new PDFDocument;
-    const path = getOutputPath();
+    const path = paths.getOutputPath();
 
     function resolveBatchSize(iter) {
         let batchSize = params.ncards - params.batchsz * iter;
@@ -168,7 +161,7 @@ async function main() {
     } finally {
         doc.end();
     }
-    logger.info(params.ncards + " cards processed and saved in " + Math.floor((Date.now() - start)/1000) + " seconds at path " + path + ".");
+    logger.info(params.ncards + " cards processed and saved in " + Math.ceil((Date.now() - start)/1000) + " seconds at path " + path + ".");
 }
 
 main();

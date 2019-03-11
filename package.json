@@ -21,7 +21,10 @@
   "bin": "index.js",
   "pkg": {
     "assets": [
-      "img/*.jpg", "matrix/matrix.jpg", "util/*.js", "node_modules/**/*.*"
+      "img/*.jpg",
+      "matrix/matrix.jpg",
+      "util/*.js",
+      "node_modules/**/*.*"
     ]
   }
 }
