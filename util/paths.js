@@ -51,8 +51,13 @@ function getMatrixPath() {
     return path.join(__dirname, "..", 'matrix', 'matrix.jpg');
 }
 
+function getLogoPath() {
+    return path.join(__dirname, "..", 'matrix', 'logo.jpg');
+}
+
 
 exports.getMatrixPath = getMatrixPath;
+exports.getLogoPath = getLogoPath;
 exports.getImgPath = getImgPath;
 exports.getPubPath = getPubPath;
 exports.getOutputPath = getOutputPath;

@@ -55,6 +55,21 @@ async function loadMatrix(resolution) {
     return img.clone();
 }
 
+async function loadLogo() {
+    const logoPath = paths.getLogoPath();
+    const img =  await cache.getOrElse(logoPath, async () => {
+        const logo = await Jimp.read(logoPath);
+        const width = logo.getWidth();
+        const height = logo.getHeight();
+        if(logger.isDebugEnabled())
+            logger.debug(logoPath + "   width=" + width + "     height=" + height);
+        //logo.resize(20, 20);
+        return logo;
+    });
+    return img.clone();
+}
+
+
 /*
   Load and image or return undefined in case of an exception
  */
@@ -77,3 +92,4 @@ function loadImageIfAny(path, width, height) {
 
 exports.insertImage = insertImage;
 exports.loadMatrix = loadMatrix;
+exports.loadLogo = loadLogo;

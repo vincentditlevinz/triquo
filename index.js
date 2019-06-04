@@ -61,6 +61,11 @@ async function generateOneCard(resolution) {
     return matrix.getBufferAsync(Jimp.MIME_JPEG);// getBuffer is a rather log process
 }
 
+async function getLogo(resolution) {
+    const logo = await processor.loadLogo(resolution);
+    return logo.getBufferAsync(Jimp.MIME_JPEG);
+}
+
 /*
  Prompt for the number of cards the user wants to generate
  */
@@ -98,20 +103,24 @@ async function inputs() {
     return await prompts(questions);
 }
 
-async function processBatch(doc, resolution, batchSize) {
+async function processBatch(doc, logo, resolution, batchSize) {
     let images = Array(batchSize);
     for (let card = 0; card < batchSize; card++) {
         images[card] = generateOneCard(resolution);
     }
     const step0 = Date.now();
     images = await Promise.all(images);
+
     const step1 = Date.now();
     logger.info(batchSize + " cards generated in " + (step1 - step0) + " milli seconds.");
 
     let counter = 0;
     for (let card = 0; card < batchSize; card++) {
+        if(counter === 0) {
+            doc.image(logo, 230, 20, {width: 130});
+        }
         const image = images[card];
-        doc.image(image, 55, 55 + counter  * 220, {width: 500});
+        doc.image(image, 30, 100 + counter  * 235, {width: 535});
         counter++;
         if (counter % 3 === 0 && (card + 1) !== batchSize ) {
             doc.addPage();
@@ -138,8 +147,9 @@ async function main() {
     const params = await inputs();
     logger.info("About to generate " + params.ncards + " cards.");
     const start =  Date.now();
-    const doc = new PDFDocument;
+    const doc = new PDFDocument({size: 'A4'});
     const path = paths.getOutputPath();
+
 
     function resolveBatchSize(iter) {
         let batchSize = params.ncards - params.batchsz * iter;
@@ -151,12 +161,13 @@ async function main() {
     }
 
     try {
+        const logo = await getLogo(params.resolution);
         doc.pipe(fs.createWriteStream(path));
         const nIter = Math.floor(params.ncards/ params.batchsz) + 1;
         for (let iter = 0; iter < nIter; iter ++) {
             const size = resolveBatchSize(iter);
             logger.info("Batch iteration: " + iter + "        size: " + size);
-            await processBatch(doc, params.resolution, size);
+            await processBatch(doc, logo, params.resolution, size);
         }
     } finally {
         doc.end();
