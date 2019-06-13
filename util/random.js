@@ -39,6 +39,7 @@ function randomValues(refPerCard) {
     while(rowSignature === undefined || ref.has(rowSignature)) {
         if(duplicate > 0) {
             logger.info("Duplicated row detected, one generates another one.");
+            row.fill(0)// reinit row !
         }
         let counter = 0;
         while (counter < p.NNumbers) {
@@ -48,6 +49,10 @@ function randomValues(refPerCard) {
                 row[index] = number;
                 refPerCard.add(number);
                 counter++;
+            } else if(duplicate > 0) {
+                if(logger.isDebugEnabled()) {
+                    logger.debug("Counter=" + counter + "     Number=" + number + "    Index=" + index + "    row[index]=" + row[index] + "    refPerCard.has(number)=" + refPerCard.has(number) )
+                }
             }
         }
         rowSignature = row.join('');
